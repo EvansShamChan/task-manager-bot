@@ -1,0 +1,1 @@
+web: python /app/echo/main.py
