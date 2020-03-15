@@ -1,1 +1,1 @@
-web: python /app/echo/main.py
+worker: python /app/echo/main.py

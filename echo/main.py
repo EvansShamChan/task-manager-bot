@@ -37,8 +37,18 @@ def main():
     updater.dispatcher.add_handler(time_handler)
     updater.dispatcher.add_handler(message_handler)
 
-    updater.start_polling()
-    updater.idle()
+    PORT = int(os.environ.get("PORT", "8443"))
+    HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME")
+
+    environment = os.getenv("ENVIR")
+    if environment == "prod":
+        updater.start_webhook(listen="0.0.0.0",
+                              port=PORT,
+                              url_path=token)
+        updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, token))
+    elif environment == "dev":
+        updater.start_polling()
+        updater.idle()
 
 
 if __name__ == "__main__":
