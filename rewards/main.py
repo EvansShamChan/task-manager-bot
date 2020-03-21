@@ -1,10 +1,7 @@
-import requests
-
 from telegram import Bot
 from telegram import Update
 from telegram import InlineKeyboardButton
 from telegram import InlineKeyboardMarkup
-
 
 
 def get_reward_main_buttons():
@@ -23,7 +20,7 @@ def get_reward_main_buttons():
 
 def handle_reward(bot: Bot, update: Update):
     bot.send_message(
-        chat_id=update.message.chat_id,
+        chat_id=update.effective_user.id,
         text="Here is your main panel for rewards! \nChoose what would you like to do.",
         reply_markup=get_reward_main_buttons())
 
