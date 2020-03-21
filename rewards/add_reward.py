@@ -1,5 +1,6 @@
 import requests
 import time
+import json
 
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import Update
@@ -9,16 +10,26 @@ from .main import handle_reward
 
 from properties import server_host
 
-DESCRIPTION, DAYS, CLARIFICATION = range(3)
+DESCRIPTION, DAYS, CLARIFICATION, ACTIVATION = range(4)
 
-rewards_ids = {}
+rewards = {}
 
 
 def get_clarification_keyboard():
     keyboard = [
         [
-            InlineKeyboardButton("OK", callback_data="reward/clarify/ok"),
-            InlineKeyboardButton("Cancel", callback_data="reward/clarify/cancel")
+            InlineKeyboardButton("OK", callback_data="reward/add/ok"),
+            InlineKeyboardButton("Cancel", callback_data="reward/add/cancel")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_activation_keyboard():
+    keyboard = [
+        [
+            InlineKeyboardButton("Yes", callback_data="reward/add/activate/yes"),
+            InlineKeyboardButton("No", callback_data="reward/add/activate/yes")
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -35,10 +46,7 @@ def get_cancel_keyboard():
 
 def handle_add_reward_button(bot: Bot, update: Update, chat_data=None, **kwargs):
     chat_id = update.effective_user.id
-    request = requests.post(url=server_host + "/" + str(chat_id))
-    rewards_ids[chat_id] = {
-        "rewardId": request.text
-    }
+    rewards[chat_id] = {}
     bot.send_message(
         chat_id=chat_id,
         text="What do you want to do(buy) after achieving your goals?",
@@ -49,19 +57,8 @@ def handle_add_reward_button(bot: Bot, update: Update, chat_data=None, **kwargs)
 def add_description(bot: Bot, update: Update, **kwargs):
     chat_id = update.effective_user.id
     description = update.message.text
-    rewards_ids[chat_id]["description"] = description
+    rewards[chat_id]["description"] = description
 
-    data = {
-        "rewardId": rewards_ids[chat_id]["rewardId"],
-        "chatId": chat_id,
-        "description": description
-    }
-
-    headers = {
-        "content-type": "application/json"
-    }
-
-    update_response = requests.put(url=server_host, json=data, headers=headers)
     update.message.reply_text("How many days you need to achieve this?",
                               reply_markup=get_cancel_keyboard())
     return DAYS
@@ -77,22 +74,11 @@ def add_days(bot: Bot, update: Update, **kwargs):
                                   reply_markup=get_cancel_keyboard())
         return DAYS
 
-    rewards_ids[chat_id]["days"] = days
+    rewards[chat_id]["days"] = days
 
-    data = {
-        "rewardId": rewards_ids[chat_id]["rewardId"],
-        "chatId": chat_id,
-        "days": days
-    }
-
-    headers = {
-        "content-type": "application/json"
-    }
-
-    update_response = requests.put(url=server_host, json=data, headers=headers)
     update.message.reply_text(
-        f"""Create new reward '{rewards_ids[chat_id]['description']}'.\n
-You will need {rewards_ids[chat_id]["days"]} days to get this.\n
+        f"""Create new reward '{rewards[chat_id]['description']}'.\n
+You will need {rewards[chat_id]["days"]} days to get this.\n
 Create this reward?""",
         reply_markup=get_clarification_keyboard())
     return CLARIFICATION
@@ -100,18 +86,44 @@ Create this reward?""",
 
 def clarify_reward_creation(bot: Bot, update: Update, chat_data=None, **kwargs):
     chat_id = update.effective_user.id
-    bot.send_message(chat_id=chat_id, text="Reward added.")
-    del rewards_ids[chat_id]
-    time.sleep(2)
+    data = {
+        "chatId": chat_id,
+        "days": rewards[chat_id]["days"],
+        "description": rewards[chat_id]["description"],
+    }
+    response = requests.post(url=f"{server_host}/reward", json=data)
+
+    if response.status_code == 201:
+        bot.send_message(chat_id=chat_id, text="Reward added.")
+        del rewards[chat_id]
+        time.sleep(2)
+    elif response.status_code == 207:
+        reward_id = json.loads(response.text)["message"]
+        rewards[chat_id]["rewardId"] = reward_id
+        bot.send_message(chat_id=chat_id,
+                         text="You have no activate reward!\nDo you want to activate reward just created?",
+                         reply_markup=get_activation_keyboard())
+        return ACTIVATION
+
     handle_reward(bot, update)
     return ConversationHandler.END
 
 
 def cancel_reward_creation(bot: Bot, update: Update, chat_data=None, **kwargs):
     chat_id = update.effective_user.id
-    reward_id = rewards_ids[chat_id]["rewardId"]
-    response = requests.delete(url=server_host + "/" + reward_id)
-    del rewards_ids[update.effective_user.id]
+    del rewards[chat_id]
+    handle_reward(bot, update)
+    return ConversationHandler.END
+
+
+def activate_reward(bot: Bot, update: Update, chat_data=None, **kwargs):
+    chat_id = update.effective_user.id
+    headers = {
+        "content-type": "application/json"
+    }
+    requests.put(url=f"{server_host}/reward/{chat_id}/reward/{rewards[chat_id]['rewardId']}", headers=headers)
+    bot.send_message(chat_id=chat_id, text="Reward added.")
+    time.sleep(2)
     handle_reward(bot, update)
     return ConversationHandler.END
 
@@ -128,8 +140,12 @@ add_conv_handler = ConversationHandler(
             CallbackQueryHandler(pattern="reward/add/cancel", callback=cancel_reward_creation)
         ],
         CLARIFICATION: [
-            CallbackQueryHandler(pattern="reward/clarify/ok", callback=clarify_reward_creation),
-            CallbackQueryHandler(pattern="reward/clarify/cancel", callback=cancel_reward_creation)
+            CallbackQueryHandler(pattern="reward/add/ok", callback=clarify_reward_creation),
+            CallbackQueryHandler(pattern="reward/add/cancel", callback=cancel_reward_creation)
+        ],
+        ACTIVATION: [
+            CallbackQueryHandler(pattern="reward/add/activate/yes", callback=activate_reward),
+            CallbackQueryHandler(pattern="reward/add/activate/no", callback=handle_reward)
         ]
     },
     fallbacks=[]
