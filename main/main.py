@@ -1,4 +1,6 @@
 import os
+import logging
+import sys
 
 from rewards.main import handle_reward
 from rewards.main import handle_reward_buttons
@@ -25,6 +27,8 @@ def do_start(bot: Bot, update: Update):
 
 
 def main():
+    logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
+
     token = os.getenv("BOT_TOKEN")
     bot = Bot(token=token)
     updater = Updater(bot=bot)

@@ -7,9 +7,9 @@ from telegram.ext import ConversationHandler, CallbackQueryHandler, MessageHandl
 
 from .main import handle_reward
 
-DESCRIPTION, DAYS, CLARIFICATION = range(3)
+from properties import server_host
 
-server_host = "http://localhost:8080/reward"
+DESCRIPTION, DAYS, CLARIFICATION = range(3)
 
 rewards_ids = {}
 
@@ -24,13 +24,25 @@ def get_clarification_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
+def get_cancel_keyboard():
+    keyboard = [
+        [
+            InlineKeyboardButton("Cancel", callback_data="reward/add/cancel")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
 def handle_add_reward_button(bot: Bot, update: Update, chat_data=None, **kwargs):
     chat_id = update.effective_user.id
     request = requests.post(url=server_host + "/" + str(chat_id))
     rewards_ids[chat_id] = {
         "rewardId": request.text
     }
-    bot.send_message(chat_id=chat_id, text="What do you want to do(buy) after achieving your goals?")
+    bot.send_message(
+        chat_id=chat_id,
+        text="What do you want to do(buy) after achieving your goals?",
+        reply_markup=get_cancel_keyboard())
     return DESCRIPTION
 
 
@@ -50,7 +62,8 @@ def add_description(bot: Bot, update: Update, **kwargs):
     }
 
     update_response = requests.put(url=server_host, json=data, headers=headers)
-    update.message.reply_text("How many days you need to achieve this?")
+    update.message.reply_text("How many days you need to achieve this?",
+                              reply_markup=get_cancel_keyboard())
     return DAYS
 
 
@@ -60,7 +73,8 @@ def add_days(bot: Bot, update: Update, **kwargs):
     try:
         days = int(days)
     except ValueError:
-        update.message.reply_text(f"Oops! {days} is not a number. Please type number value.")
+        update.message.reply_text(f"Oops! {days} is not a number. Please type number value.",
+                                  reply_markup=get_cancel_keyboard())
         return DAYS
 
     rewards_ids[chat_id]["days"] = days
@@ -105,8 +119,14 @@ def cancel_reward_creation(bot: Bot, update: Update, chat_data=None, **kwargs):
 add_conv_handler = ConversationHandler(
     entry_points=[CallbackQueryHandler(pattern="reward/add", callback=handle_add_reward_button)],
     states={
-        DESCRIPTION: [MessageHandler(Filters.text, add_description)],
-        DAYS: [MessageHandler(Filters.text, add_days)],
+        DESCRIPTION: [
+            MessageHandler(Filters.text, add_description),
+            CallbackQueryHandler(pattern="reward/add/cancel", callback=cancel_reward_creation)
+        ],
+        DAYS: [
+            MessageHandler(Filters.text, add_days),
+            CallbackQueryHandler(pattern="reward/add/cancel", callback=cancel_reward_creation)
+        ],
         CLARIFICATION: [
             CallbackQueryHandler(pattern="reward/clarify/ok", callback=clarify_reward_creation),
             CallbackQueryHandler(pattern="reward/clarify/cancel", callback=cancel_reward_creation)
