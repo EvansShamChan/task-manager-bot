@@ -26,14 +26,8 @@ def handle_reward(bot: Bot, update: Update):
 
 
 def handle_reward_buttons(bot: Bot, update: Update, data: str):
-    if data == "reward/active":
-        handle_active_reward_button(bot, update)
-    elif data == "reward/all":
+    if data == "reward/all":
         handle_all_rewards_button(bot, update)
-
-
-def handle_active_reward_button(bot: Bot, update: Update):
-    return 0
 
 
 def handle_all_rewards_button(bot: Bot, update: Update):

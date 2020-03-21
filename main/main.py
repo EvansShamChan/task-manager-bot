@@ -6,12 +6,12 @@ from rewards.main import handle_reward
 from rewards.main import handle_reward_buttons
 
 from rewards.add_reward import add_conv_handler
+from rewards.active_reward import activate_conv_handler
 
 from telegram import Bot
 from telegram import Update
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
-from telegram.ext import CallbackQueryHandler
 
 
 def do_keyboard_handle(bot: Bot, update: Update, chat_data=None, **kwargs):
@@ -35,12 +35,11 @@ def main():
 
     start_handler = CommandHandler("start", do_start)
     reward_handler = CommandHandler("reward", handle_reward)
-    buttons_handler = CallbackQueryHandler(callback=do_keyboard_handle, pass_chat_data=True)
 
     updater.dispatcher.add_handler(start_handler)
     updater.dispatcher.add_handler(reward_handler)
-    # updater.dispatcher.add_handler(buttons_handler)
     updater.dispatcher.add_handler(add_conv_handler)
+    updater.dispatcher.add_handler(activate_conv_handler)
 
     environment = os.getenv("ENVIR")
     if environment == "prod":
