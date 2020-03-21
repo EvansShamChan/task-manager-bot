@@ -57,6 +57,12 @@ def add_description(bot: Bot, update: Update, **kwargs):
 def add_days(bot: Bot, update: Update, **kwargs):
     chat_id = update.effective_user.id
     days = update.message.text
+    try:
+        days = int(days)
+    except ValueError:
+        update.message.reply_text(f"Oops! {days} is not a number. Please type number value.")
+        return DAYS
+
     rewards_ids[chat_id]["days"] = days
 
     data = {
@@ -71,8 +77,9 @@ def add_days(bot: Bot, update: Update, **kwargs):
 
     update_response = requests.put(url=server_host, json=data, headers=headers)
     update.message.reply_text(
-        "Create new reward '{}'.\nYou will need {} days to get this.\nCreate this reward?".format(
-            rewards_ids[chat_id]["description"], rewards_ids[chat_id]["days"]),
+        f"""Create new reward '{rewards_ids[chat_id]['description']}'.\n
+You will need {rewards_ids[chat_id]["days"]} days to get this.\n
+Create this reward?""",
         reply_markup=get_clarification_keyboard())
     return CLARIFICATION
 
