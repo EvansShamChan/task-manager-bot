@@ -67,7 +67,7 @@ def handle_server_response(response, chat_id, bot: Bot):
             next_button_available = False
 
         for reward in rewards:
-            chat_text += f"{reward['description']}. Days needed: {reward['neededDays']}\n"
+            chat_text += f"{rewards.index(reward) + 1}. {reward['description']}. Days needed: {reward['neededDays']}\n"
 
         bot.send_message(chat_id=chat_id, text=chat_text, reply_markup=get_rewards_keyboard(next_button_available))
     else:
