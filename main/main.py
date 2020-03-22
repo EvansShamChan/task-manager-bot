@@ -7,6 +7,7 @@ from rewards.main import handle_reward_buttons
 
 from rewards.add_reward import add_conv_handler
 from rewards.active_reward import activate_conv_handler
+from rewards.get_all import get_rewards_handler, get_back_rewards_handler, get_next_rewards_handler
 
 from telegram import Bot
 from telegram import Update
@@ -40,6 +41,9 @@ def main():
     updater.dispatcher.add_handler(reward_handler)
     updater.dispatcher.add_handler(add_conv_handler)
     updater.dispatcher.add_handler(activate_conv_handler)
+    updater.dispatcher.add_handler(get_back_rewards_handler)
+    updater.dispatcher.add_handler(get_next_rewards_handler)
+    updater.dispatcher.add_handler(get_rewards_handler)
 
     environment = os.getenv("ENVIR")
     if environment == "prod":
