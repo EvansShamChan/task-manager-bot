@@ -6,10 +6,11 @@ import json
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ConversationHandler, CallbackQueryHandler
 from .main import handle_reward
+from .get_all import handle_get_reward, showed_rewards, active_setting
 
 from properties import server_host
 
-MAIN = range(1)
+MAIN, ACTIVATION = range(2)
 
 
 def get_active_reward_keyboard():
@@ -41,7 +42,28 @@ def handle_active_reward_button(bot: Bot, update: Update, chat_data=None, **kwar
 
 
 def get_rewards(bot: Bot, update: Update, chat_data=None, **kwargs):
-    print("aaa")
+    chat_id = update.effective_user.id
+    active_setting[chat_id] = True
+    handle_get_reward(bot, update)
+    return ACTIVATION
+
+
+def activate_reward(bot: Bot, update: Update, chat_data=None, **kwargs):
+    chat_id = update.effective_user.id
+    pushed_button_key: str = update.callback_query.data
+    reward_key = int(pushed_button_key.replace("reward/activate/", ""))
+
+    reward_to_activate = showed_rewards[chat_id][reward_key]["id"]
+    response = requests.put(url=f"{server_host}/reward/{chat_id}/reward/{reward_to_activate}")
+    if response.status_code == 204:
+        bot.send_message(chat_id=chat_id, text="Reward successfully updated!")
+    else:
+        bot.send_message(chat_id=chat_id, text="Oops! Something went wrong. Try again later")
+
+    active_setting[chat_id] = False
+    time.sleep(2)
+    handle_reward(bot, update)
+    return ConversationHandler.END
 
 
 activate_conv_handler = ConversationHandler(
@@ -50,6 +72,9 @@ activate_conv_handler = ConversationHandler(
         MAIN: [
             CallbackQueryHandler(pattern="reward/active/new", callback=get_rewards),
             CallbackQueryHandler(pattern="reward/active/back", callback=handle_reward)
+        ],
+        ACTIVATION: [
+            CallbackQueryHandler(pattern="reward/activate", callback=activate_reward)
         ]
     },
     fallbacks=[]

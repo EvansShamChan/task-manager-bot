@@ -10,18 +10,25 @@ from properties import server_host
 
 chat_pages = {}
 
+showed_rewards = {}
 
-def get_rewards_keyboard(next_button_available):
-    full_keyboard = [
+active_setting = {}
+
+
+def get_rewards_keyboard(chat_id, next_button_available):
+    keyboard = [
         [
-            InlineKeyboardButton("Back", callback_data="reward/all/back"),
-            InlineKeyboardButton("Next", callback_data="reward/all/next")
+            InlineKeyboardButton("Back", callback_data="reward/all/back")
         ]
     ]
-    simplified_keyboard = [
-        [InlineKeyboardButton("Back", callback_data="reward/all/back")]
-    ]
-    return InlineKeyboardMarkup((simplified_keyboard, full_keyboard)[next_button_available])
+    if next_button_available:
+        keyboard[len(keyboard) - 1].append(InlineKeyboardButton("Next", callback_data="reward/all/next"))
+    if active_setting[chat_id]:
+        keyboard.insert(0, [])
+        rewards = showed_rewards[chat_id]
+        for key in rewards.keys():
+            keyboard[0].append(InlineKeyboardButton(key, callback_data=f"reward/activate/{key}"))
+    return InlineKeyboardMarkup(keyboard)
 
 
 def handle_get_reward(bot: Bot, update: Update, chat_data=None, **kwargs):
@@ -50,6 +57,7 @@ def handle_next_button(bot: Bot, update: Update, chat_data=None, **kwargs):
 def handle_back_button(bot: Bot, update: Update, chat_data=None, **kwargs):
     chat_id = update.effective_user.id
     if chat_pages[chat_id] == 0:
+        active_setting[chat_id] = False
         handle_reward(bot, update)
     else:
         chat_pages[chat_id] = chat_pages[chat_id] - 1
@@ -63,14 +71,17 @@ def handle_server_response(response, chat_id, bot: Bot):
         rewards = json.loads(response.text)
         chat_text = "Rewards:\n"
         next_button_available = True
+        showed_rewards[chat_id] = {}
         if len(rewards) < 5:
             next_button_available = False
 
         for reward in rewards:
+            showed_rewards[chat_id][rewards.index(reward) + 1] = reward
             chat_text += f"{rewards.index(reward) + 1}. {reward['description']}. Days needed: {reward['neededDays']}\n"
 
-        bot.send_message(chat_id=chat_id, text=chat_text, reply_markup=get_rewards_keyboard(next_button_available))
+        bot.send_message(chat_id=chat_id, text=chat_text, reply_markup=get_rewards_keyboard(chat_id, next_button_available))
     else:
+        active_setting[chat_id] = False
         bot.send_message(chat_id=chat_id, text="Oops! Something went wrong. Try again later")
 
 
