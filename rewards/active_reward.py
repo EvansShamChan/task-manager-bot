@@ -30,10 +30,14 @@ def handle_active_reward_button(bot: Bot, update: Update, chat_data=None, **kwar
         active_reward = json.loads(response.text)
         bot.send_message(chat_id=chat_id,
                          text=f"Active Reward:\n"
-                              f"'{active_reward['description']}\n"
+                              f"{active_reward['description']}\n"
                               f"Estimated days: {active_reward['neededDays']}'",
                          reply_markup=get_active_reward_keyboard())
         return MAIN
+    elif response.status_code == 404:
+        bot.send_message(chat_id=chat_id,
+                         text="You have no active reward.",
+                         reply_markup=get_active_reward_keyboard())
     else:
         bot.send_message(chat_id=chat_id, text="Oops! Something went wrong. Try again later")
         time.sleep(2)
