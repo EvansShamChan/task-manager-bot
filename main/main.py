@@ -2,12 +2,13 @@ import os
 import logging
 import sys
 
-from rewards.main import handle_reward
-from rewards.main import handle_reward_buttons
+from rewards.main import handle_reward, handle_reward_buttons
 
 from rewards.add_reward import add_conv_handler
 from rewards.active_reward import activate_conv_handler
 from rewards.get_all import get_rewards_handler, get_back_rewards_handler, get_next_rewards_handler
+
+from percent.main import percent_conv_handler
 
 from telegram import Bot
 from telegram import Update
@@ -41,6 +42,7 @@ def main():
     updater.dispatcher.add_handler(reward_handler)
     updater.dispatcher.add_handler(add_conv_handler)
     updater.dispatcher.add_handler(activate_conv_handler)
+    updater.dispatcher.add_handler(percent_conv_handler)
     updater.dispatcher.add_handler(get_back_rewards_handler)
     updater.dispatcher.add_handler(get_next_rewards_handler)
     updater.dispatcher.add_handler(get_rewards_handler)
