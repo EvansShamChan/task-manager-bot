@@ -104,6 +104,13 @@ def clarify_reward_creation(bot: Bot, update: Update, chat_data=None, **kwargs):
                          text="You have no activate reward!\nDo you want to activate reward just created?",
                          reply_markup=get_activation_keyboard())
         return ACTIVATION
+    elif response.status_code == 500:
+        bot.send_message(chat_id=chat_id, text="Oops! Something went wrong. Try again later")
+        time.sleep(2)
+    elif response.status_code == 400:
+        bot.send_message(chat_id=chat_id, text="Oops! You entered something wrong. Please try again.")
+        time.sleep(2)
+        return handle_add_reward_button(bot, update, chat_data)
 
     handle_reward(bot, update)
     return ConversationHandler.END
