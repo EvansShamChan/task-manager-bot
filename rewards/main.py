@@ -23,12 +23,3 @@ def handle_reward(bot: Bot, update: Update):
         chat_id=update.effective_user.id,
         text="Here is your main panel for rewards! \nChoose what would you like to do.",
         reply_markup=get_reward_main_buttons())
-
-
-def handle_reward_buttons(bot: Bot, update: Update, data: str):
-    if data == "reward/all":
-        handle_all_rewards_button(bot, update)
-
-
-def handle_all_rewards_button(bot: Bot, update: Update):
-    return 0

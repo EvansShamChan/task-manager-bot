@@ -2,7 +2,7 @@ import os
 import logging
 import sys
 
-from rewards.main import handle_reward, handle_reward_buttons
+from rewards.main import handle_reward
 
 from rewards.add_reward import add_conv_handler
 from rewards.active_reward import activate_conv_handler
@@ -14,14 +14,6 @@ from telegram import Bot
 from telegram import Update
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
-
-
-def do_keyboard_handle(bot: Bot, update: Update, chat_data=None, **kwargs):
-    query = update.callback_query
-    data: str = query.data
-
-    if data.startswith("reward/"):
-        handle_reward_buttons(bot, update, data)
 
 
 def do_start(bot: Bot, update: Update):
