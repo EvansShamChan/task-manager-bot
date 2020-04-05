@@ -49,7 +49,7 @@ def handle_add_reward_button(bot: Bot, update: Update, chat_data=None, **kwargs)
     rewards[chat_id] = {}
     bot.send_message(
         chat_id=chat_id,
-        text="What do you want to do(buy) after achieving your goals?",
+        text="What do you want to do(buy) after achieving your goals? (3-45 characters)",
         reply_markup=get_cancel_keyboard())
     return DESCRIPTION
 
@@ -57,9 +57,16 @@ def handle_add_reward_button(bot: Bot, update: Update, chat_data=None, **kwargs)
 def add_description(bot: Bot, update: Update, **kwargs):
     chat_id = update.effective_user.id
     description = update.message.text
+    description_length = len(description)
+
+    if description_length > 45 or description_length < 3:
+        bot.send_message(chat_id=chat_id, text="Your description is not valid. Try again.")
+        time.sleep(2)
+        return DESCRIPTION
+
     rewards[chat_id]["description"] = description
 
-    update.message.reply_text("How many days you need to achieve this?",
+    update.message.reply_text("How many days you need to achieve this? ",
                               reply_markup=get_cancel_keyboard())
     return DAYS
 
@@ -67,11 +74,17 @@ def add_description(bot: Bot, update: Update, **kwargs):
 def add_days(bot: Bot, update: Update, **kwargs):
     chat_id = update.effective_user.id
     days = update.message.text
+
     try:
         days = int(days)
     except ValueError:
         update.message.reply_text(f"Oops! {days} is not a number. Please type number value.",
                                   reply_markup=get_cancel_keyboard())
+        return DAYS
+
+    if days < 1:
+        bot.send_message(chat_id=chat_id, text="Days could not be less that 1. Try again.")
+        time.sleep(2)
         return DAYS
 
     rewards[chat_id]["days"] = days

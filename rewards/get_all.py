@@ -23,7 +23,7 @@ def get_rewards_keyboard(chat_id, next_button_available):
     ]
     if next_button_available:
         keyboard[len(keyboard) - 1].append(InlineKeyboardButton("Next", callback_data="reward/all/next"))
-    if active_setting[chat_id]:
+    if chat_id in active_setting:
         keyboard.insert(0, [])
         rewards = showed_rewards[chat_id]
         for key in rewards.keys():

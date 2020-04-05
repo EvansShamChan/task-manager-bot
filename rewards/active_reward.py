@@ -31,7 +31,7 @@ def handle_active_reward_button(bot: Bot, update: Update, chat_data=None, **kwar
         bot.send_message(chat_id=chat_id,
                          text=f"Active Reward:\n"
                               f"{active_reward['description']}\n"
-                              f"Estimated days: {active_reward['neededDays']}'",
+                              f"Estimated days: {active_reward['neededDays']}",
                          reply_markup=get_active_reward_keyboard())
         return MAIN
     elif response.status_code == 404:
