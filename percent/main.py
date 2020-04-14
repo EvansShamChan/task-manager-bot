@@ -5,6 +5,8 @@ import requests
 from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ConversationHandler, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 
+from board.main import handle_current_board
+
 from properties import server_host
 
 
@@ -100,7 +102,7 @@ percent_conv_handler = ConversationHandler(
         MAIN: [
             CallbackQueryHandler(pattern="percent/edit", callback=handler_edit_percent),
             CallbackQueryHandler(pattern="percent/default", callback=set_default_percent),
-            CallbackQueryHandler(pattern="percent/board/back", callback=None)
+            CallbackQueryHandler(pattern="percent/board/back", callback=handle_current_board)
         ],
         EDIT: [
             MessageHandler(Filters.text, save_new_percent)

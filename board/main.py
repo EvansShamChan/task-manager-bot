@@ -1,20 +1,23 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 import json
 import math
 
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackQueryHandler
 
 from properties import server_host
 
 active_boards = {}
+
+active_days = {}
 
 
 def get_main_board_keyboard():
     keyboard = [
         [
             InlineKeyboardButton("Mark as done", callback_data="board/done"),
-            InlineKeyboardButton("Add task", callback_data="board/add")
+            InlineKeyboardButton("Add task", callback_data="board/task/add")
         ],
         [
             InlineKeyboardButton("Previous day", callback_data="board/previous"),
@@ -28,7 +31,29 @@ def get_main_board_keyboard():
 def handle_board(bot: Bot, update: Update):
     chat_id = update.effective_user.id
     assigned_date = datetime.today().strftime('%Y-%m-%d')
+    show_board(bot, chat_id, assigned_date)
 
+
+def handle_current_board(bot: Bot, update: Update, chat_data=None, **kwargs):
+    handle_board(bot, update)
+
+
+def handle_previous_board(bot: Bot, update: Update, chat_data=None, **kwargs):
+    chat_id = update.effective_user.id
+    active_day = active_days[chat_id]
+    assigned_date = (datetime.strptime(active_day, '%Y-%m-%d').date() - timedelta(days=1)).strftime('%Y-%m-%d')
+    show_board(bot, chat_id, assigned_date)
+
+
+def handle_next_board(bot: Bot, update: Update, chat_data=None, **kwargs):
+    chat_id = update.effective_user.id
+    active_day = active_days[chat_id]
+    assigned_date = (datetime.strptime(active_day, '%Y-%m-%d').date() + timedelta(days=1)).strftime('%Y-%m-%d')
+    show_board(bot, chat_id, assigned_date)
+
+
+def show_board(bot: Bot, chat_id: int, assigned_date: str):
+    active_days[chat_id] = assigned_date
     response = requests.get(url=f"{server_host}/plan/{assigned_date}/chat/{chat_id}")
     if response.status_code == 200:
         active_board = json.loads(response.text)
@@ -55,8 +80,15 @@ def calculate_footer(active_board: dict):
     tasks: list = active_board['tasks']
     sum_points = 0
     sum_done_points = 0
-    for task in tasks:
-        sum_points += task['points']
-        sum_done_points += task['donePoints']
-    done_percent = math.floor(sum_done_points / sum_points * 100)
+    done_percent = 0
+    if len(tasks) != 0:
+        for task in tasks:
+            sum_points += task['points']
+            sum_done_points += task['donePoints']
+        done_percent = math.floor(sum_done_points / sum_points * 100)
     return f"{done_percent}/{active_board['percent']} %\t{sum_done_points}/{sum_points}"
+
+
+previous_board_handler = CallbackQueryHandler(pattern="board/previous", callback=handle_previous_board)
+current_board_handler = CallbackQueryHandler(pattern="board/current", callback=handle_current_board)
+next_board_handler = CallbackQueryHandler(pattern="board/next", callback=handle_next_board)
