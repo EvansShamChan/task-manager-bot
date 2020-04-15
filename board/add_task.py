@@ -4,7 +4,7 @@ import time
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ConversationHandler, CallbackQueryHandler, MessageHandler, Filters
 
-from board.main import handle_board, active_days
+from board.main import handle_active_board, active_days
 
 from properties import server_host
 
@@ -23,9 +23,34 @@ def get_clarify_adding_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
+def get_add_points_keyboard():
+    keyboard = [
+        [
+            InlineKeyboardButton("1", callback_data="task/points/1"),
+            InlineKeyboardButton("2", callback_data="task/points/2"),
+            InlineKeyboardButton("3", callback_data="task/points/3"),
+            InlineKeyboardButton("4", callback_data="task/points/4"),
+            InlineKeyboardButton("5", callback_data="task/points/5")
+        ],
+        [
+            InlineKeyboardButton("Cancel", callback_data="task/cancel")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_cancel_keyboard():
+    keyboard = [
+        [
+            InlineKeyboardButton("Cancel", callback_data="task/cancel")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
 def handle_add_task(bot: Bot, update: Update, chat_data=None, **kwargs):
     chat_id = update.effective_user.id
-    bot.send_message(chat_id=chat_id, text="What is your task?")
+    bot.send_message(chat_id=chat_id, text="What is your task?", reply_markup=get_cancel_keyboard())
     return DESCRIPTION
 
 
@@ -34,13 +59,13 @@ def add_points(bot: Bot, update: Update, **kwargs):
     description = update.message.text
     task_descriptions[chat_id] = {}
     task_descriptions[chat_id]['description'] = description
-    bot.send_message(chat_id=chat_id, text="How many points?")
+    bot.send_message(chat_id=chat_id, text="How many points?", reply_markup=get_add_points_keyboard())
     return POINTS
 
 
 def clarify_task(bot: Bot, update: Update, **kwargs):
     chat_id = update.effective_user.id
-    points = update.message.text
+    points = int(update.callback_query.data.replace("task/points/", ""))
     assigned_date = active_days[chat_id]
     description = task_descriptions[chat_id]['description']
     task_descriptions[chat_id]['points'] = points
@@ -69,7 +94,12 @@ def save_task(bot: Bot, update: Update, chat_data=None, **kwargs):
         bot.send_message(chat_id=chat_id, text="Oops! Something went wrong. Try again later")
 
     time.sleep(2)
-    handle_board(bot, update)
+    handle_active_board(bot, update)
+    return ConversationHandler.END
+
+
+def cancel_adding(bot: Bot, update: Update, chat_data=None, **kwargs):
+    handle_active_board(bot, update)
     return ConversationHandler.END
 
 
@@ -77,13 +107,16 @@ add_task_conv_handler = ConversationHandler(
     entry_points=[CallbackQueryHandler(pattern="board/task/add", callback=handle_add_task)],
     states={
         DESCRIPTION: [
-            MessageHandler(Filters.text, add_points)
+            MessageHandler(Filters.text, add_points),
+            CallbackQueryHandler(pattern="task/cancel", callback=cancel_adding)
         ],
         POINTS: [
-            MessageHandler(Filters.text, clarify_task)
+            CallbackQueryHandler(pattern="task/points", callback=clarify_task),
+            CallbackQueryHandler(pattern="task/cancel", callback=cancel_adding)
         ],
         SAVING: [
-            CallbackQueryHandler(pattern="task/clarify/yes", callback=save_task)
+            CallbackQueryHandler(pattern="task/clarify/yes", callback=save_task),
+            CallbackQueryHandler(pattern="task/cancel", callback=cancel_adding)
         ]
     },
     fallbacks=[]

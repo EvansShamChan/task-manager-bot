@@ -10,6 +10,7 @@ from rewards.get_all import get_rewards_handler, get_back_rewards_handler, get_n
 from board.main import handle_board, previous_board_handler, current_board_handler, next_board_handler
 from board.done_mark import done_conv_handler
 from board.add_task import add_task_conv_handler
+from board.finish import finish_plan_conv_handler
 
 from percent.main import percent_conv_handler
 
@@ -41,6 +42,7 @@ def main():
     updater.dispatcher.add_handler(done_conv_handler)
     updater.dispatcher.add_handler(percent_conv_handler)
     updater.dispatcher.add_handler(add_task_conv_handler)
+    updater.dispatcher.add_handler(finish_plan_conv_handler)
     updater.dispatcher.add_handler(previous_board_handler)
     updater.dispatcher.add_handler(current_board_handler)
     updater.dispatcher.add_handler(next_board_handler)

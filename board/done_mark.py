@@ -4,7 +4,7 @@ import time
 from telegram import Bot, Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackQueryHandler
 
-from board.main import active_boards, handle_board
+from board.main import active_boards, handle_active_board
 
 from properties import server_host
 
@@ -67,7 +67,7 @@ def handle_task_as_done(bot: Bot, update: Update, chat_data=None, **kwargs):
     if response.status_code == 200:
         bot.send_message(chat_id=chat_id, text="Task successfully updated.")
         time.sleep(2)
-        handle_board(bot, update)
+        handle_active_board(bot, update)
     else:
         bot.send_message(chat_id=chat_id, text="Oops! Something went wrong. Try again later")
 
