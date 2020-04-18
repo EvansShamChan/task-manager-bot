@@ -77,7 +77,8 @@ def handle_server_response(response, chat_id, bot: Bot):
 
         for reward in rewards:
             showed_rewards[chat_id][rewards.index(reward) + 1] = reward
-            chat_text += f"{rewards.index(reward) + 1}. {reward['description']}. Days needed: {reward['neededDays']}\n"
+            chat_text += f"{rewards.index(reward) + 1}. {reward['description']}. " \
+                         f"Days: {reward['doneDays']}/{reward['neededDays']}\n"
 
         bot.send_message(chat_id=chat_id, text=chat_text, reply_markup=get_rewards_keyboard(chat_id, next_button_available))
     else:

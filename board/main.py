@@ -70,7 +70,7 @@ def show_board(bot: Bot, chat_id: int, assigned_date: str):
                              f"\t\t\t\t {active_board['assignedDate']}\n" \
                              f"Tasks:\n" \
                              f"{get_tasks_message(active_board)}\n" \
-                             f"{calculate_footer(active_board)}"
+                             f"{calculate_footer(chat_id, active_board)}"
         bot.send_message(chat_id=chat_id, text=board_message_text,
                          reply_markup=get_main_board_keyboard('planStatus' in active_board and
                                                               active_board['planStatus'] == 'FINISHED'))
@@ -86,7 +86,7 @@ def get_tasks_message(active_board: dict):
     return response_message
 
 
-def calculate_footer(active_board: dict):
+def calculate_footer(chat_id: int, active_board: dict):
     tasks: list = active_board['tasks']
     sum_points = 0
     sum_done_points = 0
@@ -96,6 +96,7 @@ def calculate_footer(active_board: dict):
             sum_points += task['points']
             sum_done_points += task['donePoints']
         done_percent = math.floor(sum_done_points / sum_points * 100)
+    active_boards[chat_id]['donePercent'] = done_percent
     return f"{done_percent}/{active_board['percent']} %\t\t\t\t{sum_done_points}/{sum_points}"
 
 

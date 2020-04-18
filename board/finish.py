@@ -34,7 +34,12 @@ def handle_finishing(bot: Bot, update: Update, chat_data=None, **kwargs):
     chat_id = update.effective_user.id
     active_board = active_boards[chat_id]
     assigned_date = active_board['assignedDate']
-    response = requests.put(url=f"{server_host}/plan/{assigned_date}/chat/{chat_id}")
+    request_body = {
+        "assignedDate": assigned_date,
+        "chatId": chat_id,
+        "donePercentage": active_board['donePercent']
+    }
+    response = requests.put(url=f"{server_host}/plan", json=request_body)
     if response.status_code == 200:
         bot.send_message(chat_id=chat_id, text="Plan successfully updated.")
     else:
